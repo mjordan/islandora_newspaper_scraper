@@ -1,0 +1,6 @@
+{
+  "hostname": "https://chinesetimes.lib.sfu.ca",
+  "issue_list_url_path": "/ctimes-1/chinese-times-newspaper",
+  "issue_list_output_csv_path": "issue_list.csv",
+  "mods_metadata_output_csv_path": "metadata.csv"
+}
