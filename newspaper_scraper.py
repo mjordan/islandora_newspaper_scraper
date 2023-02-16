@@ -7,15 +7,13 @@ import re
 import csv
 import datetime
 
-# MODS are at /islandora/object/[pid]/datastream/MODS/download
-
 with open("config.json", "r") as config_file:
     config = json.load(config_file)
 
 def get_num_pages(issue_page_url):
     issue_page_response = requests.get(config['hostname'] + issue_page_url)
     soup = BeautifulSoup(issue_page_response.text, 'html.parser')
-    page_pattern = '.*\-page\-'
+    page_pattern = '.*page\-\d*'
     scraped_page_urls = soup.findAll('a', {'href': re.compile(page_pattern)})
     return len(scraped_page_urls)
 
@@ -54,7 +52,7 @@ for scraped_url in scraped_urls:
     csv_output_row['num_pages'] = num_pages
 
     csv_writer.writerow(csv_output_row)
-    print(f"Issue info for {scraped_url.get_text()} scraped.")
+    print(f"Issue info for {scraped_url.get_text()} scraped ({num_pages} page links).")
 
 csv_writer_file_handle.close()
 print(f"Issue list written to {config['issue_list_output_csv_path']}.")
