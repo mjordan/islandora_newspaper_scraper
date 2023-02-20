@@ -3,13 +3,15 @@ import json
 from bs4 import BeautifulSoup
 import os
 import csv
+import re
+import copy
 
 
 with open("config.json", "r") as config_file:
     config = json.load(config_file)
 
 mods_dir = 'mods'
-csv_columns = ['objid', 'dc:title', 'dc:publisher', 'dc:date', 'dc:subject', 'dc:subject.chi', 'dc:description']
+csv_columns = ['objid', 'dc:title', 'dc:title.chi', 'dc:publisher', 'dc:date', 'dc:date.chi', 'dc:language', 'dc:source', 'dc:subject', 'dc:subject.chi', 'dc:description']
 
 csv_writer_file_handle = open(config['mods_metadata_output_csv_path'], 'w', encoding='utf-8')
 csv_writer = csv.DictWriter(csv_writer_file_handle, fieldnames=csv_columns)
@@ -20,30 +22,41 @@ mods_files = [f for f in dir_contents if os.path.isfile(os.path.join(mods_dir, f
 
 for mods_file in mods_files:
     with open(os.path.join(mods_dir, mods_file)) as file:
-        soup = BeautifulSoup(file, features="lxml")
+        raw_mods_xml = file.read()
+        raw_mods_xml_for_chinese_date = copy.copy(raw_mods_xml)
+
+        soup = BeautifulSoup(raw_mods_xml, features="xml")
 
         csv_output_row = {}
 
-        '''
-        # date_issued = soup.find("originInfo").find("dateIssued", {"keyDate": "yes"})
-        print(date_issued)
-        # if date_issued is not None:
-            # print(date_issued)
-            # keyDate = date_issued.find("keyDate")
-            # if keyDate is not None:
-                # print("DEBUG keyDate", keyDate)
-        '''
+        # No idea why this is returning None.
+        # chi_date_issued = soup.find(re.compile(r'<dateIssued lang="chi" script="Hant">'))
+        # print(chi_date_issued)
+        # And no idea why this is returning an empty list.
+        # dates_issued = soup.find_all('dateIssued')
 
-        publisher = soup.find("publisher").text
-        csv_output_row['dc:publisher'] = publisher
+        # Good ole parsing XML with regexes.
+        mods = soup.find('mods')
+        chi_date_issued_regex = re.search(r'<dateIssued lang="chi" script="Hant">(.*)</dateIssued>', raw_mods_xml_for_chinese_date)
+        if chi_date_issued_regex is not None:
+            chi_date_issued = chi_date_issued_regex.group(1)
+            csv_output_row['dc:date.chi'] = chi_date_issued
 
         local_identifier = soup.find("identifier", {"type":"local"}).text
-        csv_output_row['objid'] = local_identifier
 
         date_published = local_identifier.replace('ctimes-', '')
         csv_output_row['dc:date'] = date_published
 
-        csv_output_row['dc:title'] = "Chinese Times"
+        csv_output_row['objid'] = f"BVAS.00001.{date_published.replace('-', '')}"
+
+        publisher = soup.find("publisher").text
+        csv_output_row['dc:publisher'] = f"Vancouver, British Columbia : {publisher}, {date_published[:4]}"
+
+        csv_output_row['dc:title'] = f"Chinese Times : [{date_published}]"
+        csv_output_row['dc:title.chi'] = f"大漢公報 : [{chi_date_issued}]"
+
+        csv_output_row['dc:language'] = 'chi'
+        csv_output_row['dc:source'] = "University of British Columbia Library"
 
         subjects_en = soup.find("subject", {"authority":"lcsh"})
         subjects_en_list = []
@@ -63,7 +76,7 @@ for mods_file in mods_files:
 
         abstract = soup.find("abstract")
         if len(abstract.text) > 0:
-            csv_output_row['dc:description'] = abstract.text.replace('<br>', ' ')
+            csv_output_row['dc:description'] = abstract.text.replace('<br>', ' ').strip()
             if not csv_output_row['dc:description'].endswith('.'):
                 csv_output_row['dc:description'] = csv_output_row['dc:description'] + '.'
         else:
