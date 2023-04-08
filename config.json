@@ -1,6 +1,11 @@
 {
-  "hostname": "https://chinesetimes.lib.sfu.ca",
-  "issue_list_url_path": "/ctimes-1/chinese-times-newspaper",
+  "hostname": "https://newspapers.lib.sfu.ca",
+  "issue_list_url_path": "/soleildecolombie-4/le-soleil-de-vancouver-april-26-1968-december-21-1973",
   "issue_list_output_csv_path": "issue_list.csv",
-  "mods_metadata_output_csv_path": "metadata.csv"
+  "output_dir": "output",
+  "issue_link_pattern": "^/soleildecolombie\\-\\d.*",
+  "page_link_pattern": ".*page\\-\\d*",
+  "page_pid_in_url_alias_pattern": "soleildecolombie\\-\\d*",
+  "mods_metadata_output_csv_path": "metadata.csv",
+  "datastreams": ["MODS.xml", "TN.jpeg", "OCR.asc", "JP2.jp2", "JPG.jpeg"]
 }
