@@ -33,11 +33,10 @@ csv_writer.writeheader()
 
 issue_list_url = config['issue_list_url_path']
 issue_url = config['hostname'] + issue_list_url
-print(f"Scraping issue list from {config['hostname']}/{config['issue_list_url_path']}...", end='')
 issue_list_response = requests.get(issue_url)
 soup = BeautifulSoup(issue_list_response.text, 'html.parser')
 scraped_issue_urls = soup.findAll('a', {'href': re.compile(config['issue_link_pattern'])})
-print("done.")
+print(f"Finished scraping issue list from {config['hostname']}/{config['issue_list_url_path']}.")
 csv_output_row = dict()
 for scraped_issue_url in scraped_issue_urls:
     csv_output_row['issue_date'] = scraped_issue_url.get_text()
@@ -65,8 +64,11 @@ for scraped_issue_url in scraped_issue_urls:
     if date_published in existing_issues:
         continue
 
-    print(f"Exporting issue for {scraped_issue_url.get_text()} ({date_published}) ({num_pages} pages)...", end='')
+    print(f"Exporting issue for {scraped_issue_url.get_text()} ({date_published}) ({num_pages} pages).")
     issue_path = os.path.join(config['output_dir'], date_published)
+
+    if os.path.exists(issue_path):
+        continue
 
     issue_mods_url = config['hostname'] + '/islandora/object/' + pid + '/datastream/MODS/download'
     issue_mods_response = requests.get(issue_mods_url)
@@ -109,7 +111,6 @@ for scraped_issue_url in scraped_issue_urls:
     csv_output_row['num_pages'] = num_pages
 
     csv_writer.writerow(csv_output_row)
-    print("done.")
 
 csv_writer_file_handle.close()
 print(f"Issue list written to {config['issue_list_output_csv_path']}.")
